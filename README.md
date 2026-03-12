@@ -37,13 +37,13 @@ interactive map.
 🧭 Smart Route Planning Find the fastest routes and estimate arrival
 times.
 
-👨‍✈️ Conductor Trip Management Bus staff can update trip status and share
+👨‍✈️ Conductor Trip Management Bus staff can update the trip status and share
 live location.
 
 ⚙️ Admin Fleet Dashboard Transport authorities monitor buses, routes,
 alerts, and analytics.
 
-🔔 Instant Passenger Alerts Notify users about delays, disruptions, and
+🔔 Instant Passenger Alerts: Notify users about delays, disruptions, and
 arrivals.
 
 ------------------------------------------------------------------------
@@ -74,7 +74,7 @@ Separate dashboards for: - Commuters - Conductors - Administrators
 
 Role | Key Capabilities Commuter | Track buses, search routes, receive
 alerts Conductor | Manage trips, update location, passenger counts Admin
-| Monitor fleet, manage routes, system analytics
+| Monitor fleet, manage routes, and system analytics
 
 ------------------------------------------------------------------------
 
@@ -113,7 +113,7 @@ Database
 
 ------------------------------------------------------------------------
 
-Project Structure
+
 
 ## 📂 Project Structure
 
@@ -142,8 +142,8 @@ EzyBus
 
 ## 🧪 Bus Simulation Engine
 
-To demonstrate real-time tracking without physical GPS devices, the
-platform includes a bus simulation system that:
+To demonstrate real-time tracking without physical GPS devices,
+The platform includes a bus simulation system that:
 
 -   Generates realistic bus movement
 -   Updates positions every few seconds
