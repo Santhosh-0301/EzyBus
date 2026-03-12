@@ -89,6 +89,9 @@ Database - Firebase Firestore
 
 <img width="1665" height="942" alt="Architecture Diagram" src="https://github.com/user-attachments/assets/a053f7f5-22ba-47cd-9ac0-a164c240bb05" />
 
+## 🏗 System Architecture
+
+```text
 Frontend
 │
 ├── Next.js 16 (React)
@@ -106,11 +109,15 @@ Backend
 Database
 │
 └── Firebase Firestore
+```
 
 ------------------------------------------------------------------------
 
 Project Structure
 
+## 📂 Project Structure
+
+```text
 EzyBus
 │
 ├── frontend
@@ -129,6 +136,7 @@ EzyBus
 ├── shared
 │
 └── README.md
+```
 
 ------------------------------------------------------------------------
 
