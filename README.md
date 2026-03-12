@@ -89,6 +89,49 @@ Database - Firebase Firestore
 
 <img width="1665" height="942" alt="Architecture Diagram" src="https://github.com/user-attachments/assets/a053f7f5-22ba-47cd-9ac0-a164c240bb05" />
 
+Frontend
+│
+├── Next.js 16 (React)
+├── TypeScript
+├── TailwindCSS
+├── Framer Motion
+├── Zustand State Management
+│
+Backend
+│
+├── Node.js
+├── Express REST API
+├── JWT Authentication
+│
+Database
+│
+└── Firebase Firestore
+
+------------------------------------------------------------------------
+
+Project Structure
+
+EzyBus
+│
+├── frontend
+│   ├── app
+│   ├── components
+│   ├── store
+│   ├── utils
+│   └── styles
+│
+├── backend
+│   ├── controllers
+│   ├── routes
+│   ├── middleware
+│   └── config
+│
+├── shared
+│
+└── README.md
+
+------------------------------------------------------------------------
+
 🧪 Bus Simulation Engine
 
 To demonstrate real-time tracking without physical GPS devices, the
