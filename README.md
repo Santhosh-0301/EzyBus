@@ -1,4 +1,4 @@
-🚍 EzyBus
+## 🚍 EzyBus
 
 Smart Urban Bus Tracking & Transit Intelligence Platform
 
@@ -12,7 +12,7 @@ route planning, and fleet management.
 
 ------------------------------------------------------------------------
 
-🌍 Problem
+## 🌍 Problem
 
 Public transportation in many cities suffers from:
 
@@ -25,7 +25,7 @@ These issues reduce public trust in transportation systems.
 
 ------------------------------------------------------------------------
 
-💡 Solution
+## 💡 Solution
 
 EzyBus introduces a smart digital ecosystem for public bus transport.
 
@@ -48,7 +48,7 @@ arrivals.
 
 ------------------------------------------------------------------------
 
-🧠 Innovation
+## 🧠 Innovation
 
 EzyBus introduces several smart concepts:
 
@@ -70,7 +70,7 @@ Separate dashboards for: - Commuters - Conductors - Administrators
 
 ------------------------------------------------------------------------
 
-🖥 Platform Overview
+## 🖥 Platform Overview
 
 Role | Key Capabilities Commuter | Track buses, search routes, receive
 alerts Conductor | Manage trips, update location, passenger counts Admin
@@ -78,7 +78,7 @@ alerts Conductor | Manage trips, update location, passenger counts Admin
 
 ------------------------------------------------------------------------
 
-🏗 System Architecture
+## 🏗 System Architecture
 
 Frontend - Next.js 16 (React) - TypeScript - TailwindCSS - Framer
 Motion - Zustand State Management
@@ -89,7 +89,7 @@ Database - Firebase Firestore
 
 <img width="1665" height="942" alt="Architecture Diagram" src="https://github.com/user-attachments/assets/a053f7f5-22ba-47cd-9ac0-a164c240bb05" />
 
-## 🏗 System Architecture
+
 
 ```text
 Frontend
@@ -140,7 +140,7 @@ EzyBus
 
 ------------------------------------------------------------------------
 
-🧪 Bus Simulation Engine
+## 🧪 Bus Simulation Engine
 
 To demonstrate real-time tracking without physical GPS devices, the
 platform includes a bus simulation system that:
@@ -153,7 +153,7 @@ This enables testing and visualization during development and demos.
 
 ------------------------------------------------------------------------
 
-🎨 UI / UX Design
+## 🎨 UI / UX Design
 
 The platform is built with production-level UI design principles.
 
@@ -163,7 +163,7 @@ layouts - Interactive map visualization
 
 ------------------------------------------------------------------------
 
-📂 Project Structure
+## 📂 Project Structure
 
 EzyBus - frontend - app - components - store - utils - styles -
 backend - controllers - routes - middleware - config - shared -
@@ -171,7 +171,7 @@ README.md
 
 ------------------------------------------------------------------------
 
-📊 Dashboards
+## 📊 Dashboards
 
 Commuter Dashboard - Live bus map - Route search - Service alerts
 
@@ -182,7 +182,7 @@ Admin Dashboard - Fleet monitoring - System alerts - Route analytics
 
 ------------------------------------------------------------------------
 
-🌱 Future Improvements
+## 🌱 Future Improvements
 
 -   AI-based bus arrival prediction
 -   Traffic-aware routing
@@ -192,7 +192,7 @@ Admin Dashboard - Fleet monitoring - System alerts - Route analytics
 
 ------------------------------------------------------------------------
 
-🌏 Impact
+## 🌏 Impact
 
 EzyBus can help cities: - Reduce commuter waiting time - Improve transit
 reliability - Increase public transport adoption - Enable data-driven
@@ -200,7 +200,7 @@ transport planning
 
 ------------------------------------------------------------------------
 
-👨‍💻 Authors
+## 👨‍💻 Authors
 
 Nandhini R, Santhosh R, Gokul S, Darshana Ganesh
 B.Tech Computer Science and Engineering, 
