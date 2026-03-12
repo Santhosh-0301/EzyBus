@@ -92,7 +92,6 @@ Base URL: `http://localhost:5000/api/v1`
 | GET    | /users                | Admin        | List all users       |
 | PUT    | /users/:id/role       | Admin        | Change user role     |
 =======
-## 🚍 EzyBus
 
 Smart Urban Bus Tracking & Transit Intelligence Platform
 
