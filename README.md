@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🚌 EzyBus
 
 A full-stack bus management and commuter tracking platform supporting three user roles: **Commuter**, **Conductor**, and **Admin**.
@@ -295,5 +294,3 @@ Nandhini R, Santhosh R, Gokul S, Darshana Ganesh
   Tiruchirappalli
 
 ------------------------------------------------------------------------
-
->>>>>>> 2de36a2ad87d5ee7558c5fa0a014af2efd1f3fad
