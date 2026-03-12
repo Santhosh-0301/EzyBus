@@ -121,40 +121,6 @@ README.md
 
 ------------------------------------------------------------------------
 
-⚙️ Installation
-
-Clone Repository
-
-git clone https://github.com/yourusername/ezybus.git cd ezybus
-
-Install Dependencies
-
-Frontend cd frontend npm install
-
-Backend cd backend npm install
-
-Environment Setup
-
-Backend .env
-
-PORT=5000 JWT_SECRET=your_secret FIREBASE_PROJECT_ID=your_project
-FIREBASE_CLIENT_EMAIL=your_email FIREBASE_PRIVATE_KEY=your_private_key
-
-Frontend .env.local
-
-NEXT_PUBLIC_API_URL=http://localhost:5000
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key
-
-Run the Application
-
-Backend npm run dev
-
-Frontend npm run dev
-
-Open: http://localhost:3000
-
-------------------------------------------------------------------------
-
 📊 Dashboards
 
 Commuter Dashboard - Live bus map - Route search - Service alerts
@@ -186,9 +152,7 @@ transport planning
 
 👨‍💻 Author
 
-Nandhini R
-
-Computer Science & Engineering AI • Systems • Product Development
+Nandhini R, Santhosh R, Gokul S, Darshana Ganesh
 
 ------------------------------------------------------------------------
 
