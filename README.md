@@ -1,4 +1,3 @@
-
 🚍 EzyBus
 
 Smart Urban Bus Tracking & Transit Intelligence Platform
@@ -88,7 +87,7 @@ Backend - Node.js - Express REST API - JWT Authentication
 
 Database - Firebase Firestore
 
-------------------------------------------------------------------------
+<img width="1665" height="942" alt="Architecture Diagram" src="https://github.com/user-attachments/assets/a053f7f5-22ba-47cd-9ac0-a164c240bb05" />
 
 🧪 Bus Simulation Engine
 
@@ -150,15 +149,12 @@ transport planning
 
 ------------------------------------------------------------------------
 
-👨‍💻 Author
+👨‍💻 Authors
 
 Nandhini R, Santhosh R, Gokul S, Darshana Ganesh
+B.Tech Computer Science and Engineering, 
+SRM Institute of Science and Technology,
+Tiruchirappalli
 
 ------------------------------------------------------------------------
 
-⭐ Support the Project
-
-If you like this project: - Star the repository - Fork it - Build upon
-it
-
-------------------------------------------------------------------------
