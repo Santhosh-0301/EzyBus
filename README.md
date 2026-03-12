@@ -198,11 +198,3 @@ If you like this project: - Star the repository - Fork it - Build upon
 it
 
 ------------------------------------------------------------------------
-
-Hackathon Tip
-
-Add these 3 things to your GitHub repo to impress judges instantly:
-
-1.  Architecture Diagram
-2.  Demo GIF of the dashboard
-3.  Screenshots of each role dashboard
