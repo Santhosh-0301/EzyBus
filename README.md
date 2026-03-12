@@ -288,8 +288,8 @@ transport planning
 ## 👨‍💻 Authors
 
 Nandhini R, Santhosh R, Gokul S, Darshana Ganesh
-  B.Tech Computer Science and Engineering, 
-  SRM Institute of Science and Technology,
-  Tiruchirappalli
+B.Tech Computer Science and Engineering, 
+SRM Institute of Science and Technology,
+Tiruchirappalli
 
 ------------------------------------------------------------------------
