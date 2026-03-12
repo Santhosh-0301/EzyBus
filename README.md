@@ -163,14 +163,6 @@ layouts - Interactive map visualization
 
 ------------------------------------------------------------------------
 
-## 📂 Project Structure
-
-EzyBus - frontend - app - components - store - utils - styles -
-backend - controllers - routes - middleware - config - shared -
-README.md
-
-------------------------------------------------------------------------
-
 ## 📊 Dashboards
 
 Commuter Dashboard - Live bus map - Route search - Service alerts
@@ -203,9 +195,9 @@ transport planning
 ## 👨‍💻 Authors
 
 Nandhini R, Santhosh R, Gokul S, Darshana Ganesh
-B.Tech Computer Science and Engineering, 
-SRM Institute of Science and Technology,
-Tiruchirappalli
+  B.Tech Computer Science and Engineering, 
+  SRM Institute of Science and Technology,
+  Tiruchirappalli
 
 ------------------------------------------------------------------------
 
