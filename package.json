@@ -18,5 +18,8 @@
     "shared",
     "backend",
     "frontend"
-  ]
+  ],
+  "dependencies": {
+    "firebase": "^12.11.0"
+  }
 }
