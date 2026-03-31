@@ -335,7 +335,7 @@ transport planning
 
 ## 🎥 Demo
 
-🔗 Live Demo: https://your-vercel-link.vercel.app  
+🔗 Live Demo: (https://ezybus-frontend.vercel.app/)
 🎬 Demo Video:(https://drive.google.com/file/d/1LQA-AsDlJ88I_8NaRi8xbFzauqnfXNLz/view)
 
 ------------------------------------------------------------------------
