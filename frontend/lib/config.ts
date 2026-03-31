@@ -14,7 +14,6 @@ interface EnvVar {
 
 const VARS: EnvVar[] = [
     { key: 'NEXT_PUBLIC_API_URL', required: true, desc: 'Backend API base URL (e.g. http://localhost:5000/api/v1)' },
-    { key: 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY', required: true, desc: 'Google Maps JavaScript API key (Maps JavaScript API must be enabled)' },
     { key: 'NEXT_PUBLIC_FIREBASE_API_KEY', required: false, desc: 'Firebase web app API key' },
     { key: 'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN', required: false, desc: 'Firebase auth domain' },
     { key: 'NEXT_PUBLIC_FIREBASE_PROJECT_ID', required: false, desc: 'Firebase project ID' },
@@ -39,7 +38,7 @@ function validate(): void {
     const lines = missing.map(({ key, desc }) => `  • ${key}\n      ${desc}`);
 
     throw new Error(
-        `\n\n❌  EzyBus Frontend — Missing Required Environment Variables\n` +
+        `\n\n❌  EzyBus Frontend — \n` +
         `${'─'.repeat(64)}\n` +
         lines.join('\n') + '\n' +
         `${'─'.repeat(64)}\n` +

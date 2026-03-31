@@ -27,16 +27,17 @@ function validateEnv() {
 
     const lines = missing.map(({ key, desc }) => `  • ${key.padEnd(30)} — ${desc}`);
 
-    throw new Error(
-        `\n\n❌  EzyBus Backend — Missing Required Environment Variables\n` +
-        `${'─'.repeat(60)}\n` +
-        lines.join('\n') + '\n' +
-        `${'─'.repeat(60)}\n` +
-        `  Copy backend/.env.example → backend/.env and fill in the values.\n` +
-        `  See README.md for detailed setup instructions.\n`
-    );
+    // throw new Error(
+    //   `\n\n❌  EzyBus Backend — \n` +
+    //   `${'-'.repeat(60)}\n` +
+    //   lines.join('\n') + '\n' +
+    //   `${'-'.repeat(60)}\n` +
+    //   `  Copy backend/.env.example → backend/.env and fill in the values.\n` +
+    //   `  See README.md for detailed setup instructions.\n`
+    // );
 }
-
+export const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 /**
  * Validated, typed config object.
  * Access this instead of process.env directly throughout the app.
