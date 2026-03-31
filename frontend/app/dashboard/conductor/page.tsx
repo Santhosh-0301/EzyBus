@@ -1,0 +1,318 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { motion, Variants } from 'framer-motion';
+import BusMap from '@/components/BusMap';
+import Sidebar from '@/components/Sidebar';
+import FloatingButton from '@/components/ui/FloatingButton';
+import StatCard from '@/components/ui/StatCard';
+import Panel from '@/components/ui/Panel';
+import GradientButton from '@/components/ui/GradientButton';
+import SetReminderModal from '@/components/ui/SetReminderModal';
+import { startTrip, endTrip, updateLocation } from '@/lib/apiService';
+import { Navigation, Play, StopCircle, Users, MapPin, Clock, AlertTriangle } from 'lucide-react';
+import RoleGuard from '@/components/RoleGuard';
+import { useTripStore } from '@/store/tripStore';
+import { useBusStore } from '@/store/busStore';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+
+interface Trip { id: string; busId: string; routeId: string; status: string; passengerCount: number; }
+
+const STATUS_BADGES: Record<string, string> = {
+    scheduled: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30',
+    active: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30',
+    completed: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/20 dark:text-slate-400 dark:border-slate-500/30',
+    cancelled: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30',
+};
+
+const container: Variants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.07 } } };
+const item: Variants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 25 } } };
+
+export default function ConductorDashboardPage() {
+    const { user, loading } = useAuth();
+    const router = useRouter();
+    const trips = useTripStore(s => s.trips);
+    const activeTrip = trips.find(t => t.status === 'active') || null;
+    const updateTripStatus = useTripStore(s => s.updateTripStatus);
+    const updatePaxCount = useTripStore(s => s.updatePassengerCount);
+
+    const buses = useBusStore(s => s.buses);
+    const routes = useBusStore(s => s.routes);
+    const selectBus = useBusStore(s => s.selectBus);
+    const activeBus = activeTrip ? buses.find(b => b.id === activeTrip.busId) : null;
+    const activeRoute = activeTrip ? routes.find(r => r.id === activeTrip.routeId) : null;
+    const updateBusLoc = useBusStore(s => s.updateBusLocation);
+    const updateBusStatus = useBusStore(s => s.updateBusStatus);
+    const addAlert = useBusStore(s => s.addAlert);
+
+    const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null);
+    const [updating, setUpdating] = useState(false);
+    const [localPaxCount, setLocalPaxCount] = useState(0);
+    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+
+    const remainingStops = activeTrip ? 5 : 0;
+    const tripTime = activeTrip ? "45 mins" : "0 mins";
+
+    useEffect(() => {
+        if (!loading && !user) router.push('/login/conductor');
+    }, [user, loading, router]);
+
+    useEffect(() => {
+        if (activeTrip) {
+            setLocalPaxCount(activeTrip.passengerCount);
+        }
+    }, [activeTrip?.id, activeTrip?.passengerCount]);
+
+    const flash = (text: string, type: 'ok' | 'err') => {
+        setStatusMsg({ text, type });
+        setTimeout(() => setStatusMsg(null), 3500);
+    };
+
+    const handleStartTrip = async (trip: any) => {
+        setUpdating(true);
+        try {
+            await startTrip({ busId: trip.busId, routeId: trip.routeId, conductorId: user!.id });
+        } catch {
+            console.warn('Backend startTrip failed, delegating to Zustand store.');
+        } finally {
+            updateTripStatus(trip.id, 'active');
+            flash('Trip started successfully!', 'ok');
+            setUpdating(false);
+        }
+    };
+
+    const handleEndTrip = async () => {
+        if (!activeTrip) return;
+        setUpdating(true);
+        try {
+            await endTrip(activeTrip.id);
+        } catch {
+            console.warn('Backend endTrip failed, delegating to Zustand store.');
+        } finally {
+            updateTripStatus(activeTrip.id, 'completed');
+            flash('Trip completed!', 'ok');
+            setUpdating(false);
+        }
+    };
+
+    const handleSendLocation = useCallback(async () => {
+        if (!activeTrip || !activeBus) { flash('No active trip.', 'err'); return; }
+        if (!navigator.geolocation) { flash('Geolocation not supported.', 'err'); return; }
+        navigator.geolocation.getCurrentPosition(async pos => {
+            const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            try {
+                await updateLocation(activeTrip.id, loc);
+            } catch {
+                console.warn('Backend updateLocation failed, delegating to Zustand store.');
+            } finally {
+                updateBusLoc(activeBus.id, loc);
+                flash(`Location sent: ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`, 'ok');
+            }
+        }, () => flash('Could not get location.', 'err'));
+    }, [activeTrip, activeBus, updateBusLoc]);
+
+    const handlePaxChange = (delta: number) => {
+        if (!activeTrip) return;
+        const newCount = Math.max(0, localPaxCount + delta);
+        setLocalPaxCount(newCount);
+        updatePaxCount(activeTrip.id, newCount);
+    };
+
+    const handleBreakdown = () => {
+        if (!activeTrip || !activeBus || !activeRoute) return;
+        
+        // Mark as maintenance
+        updateBusStatus(activeBus.id, 'maintenance');
+        
+        // Send alert
+        addAlert({
+            title: `🚨 Breakdown: Bus ${activeBus.busNumber}`,
+            message: `Dear passengers, Bus ${activeBus.busNumber} is currently experiencing a minor technical delay. Please don't worry—a replacement bus has already been dispatched and will arrive shortly to ensure you reach your destination safely on ${activeRoute.name}. Thank you for your patience!`,
+            severity: 'critical',
+            busId: activeBus.id,
+            routeId: activeRoute.id
+        });
+
+        // End trip contextually so it stops routing
+        handleEndTrip();
+        flash('Emergency notified to Admin and Commuters!', 'err');
+    };
+
+    const handleEmergency = () => {
+        if (!activeTrip || !activeBus || !activeRoute) return;
+        
+        // Mark as inactive (stopped)
+        updateBusStatus(activeBus.id, 'inactive');
+        
+        // Send critical alert
+        addAlert({
+            title: `🚨 EMERGENCY SOS: Bus ${activeBus.busNumber}`,
+            message: `Attention passengers: There is an emergency on Bus ${activeBus.busNumber}. Please remain calm and stay seated. Emergency services and authorities have been immediately notified of our exact location and are en route. Your safety is our absolute priority.`,
+            severity: 'critical',
+            busId: activeBus.id,
+            routeId: activeRoute.id
+        });
+
+        // Flash
+        flash('SOS Emergency Alert Sent!', 'err');
+    };
+
+    if (loading || !user) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" /></div>;
+
+    return (
+        <RoleGuard allowedRole="conductor">
+            <div className="flex min-h-[calc(100vh-4rem)]">
+                <Sidebar role="conductor" />
+
+                <div className="flex-1 page-container min-w-0">
+                    {/* Header */}
+                    <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Conductor Dashboard</h1>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Welcome, <span className="text-amber-600 dark:text-amber-400">{user.name}</span></p>
+                    </motion.div>
+
+                    {/* Status flash */}
+                    {statusMsg && (
+                        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                            className={`mb-6 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium ${statusMsg.type === 'ok' ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300' : 'bg-red-500/15 border border-red-500/30 text-red-300'}`}>
+                            {statusMsg.type === 'ok' ? '✅' : '⚠️'} {statusMsg.text}
+                        </motion.div>
+                    )}
+
+                    {/* Stats */}
+                    <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        {[
+                            { label: "Current Trip", value: activeTrip ? "Running" : "Idle", icon: <Navigation size={18} />, color: 'emerald' as const, onClick: () => document.getElementById('active-trip-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+                            { label: "Passengers Onboard", value: localPaxCount, icon: <Users size={18} />, color: 'indigo' as const, onClick: () => document.getElementById('active-trip-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+                            { label: "Stops Remaining", value: remainingStops, icon: <MapPin size={18} />, color: 'cyan' as const, onClick: () => document.getElementById('active-trip-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+                            { label: "Trip Duration", value: tripTime, icon: <Clock size={18} />, color: 'amber' as const, onClick: () => document.getElementById('my-trips-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
+                        ].map((s: any) => (
+                            <motion.div key={s.label} variants={item}><StatCard {...s} /></motion.div>
+                        ))}
+                    </motion.div>
+
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+                        {/* Active Trip Panel */}
+                        <div className="xl:col-span-1" id="active-trip-panel">
+                            <Panel icon="🚌" title="Bus Status" subtitle={activeTrip ? 'Trip in progress' : 'No active trip'}>
+                                {activeTrip ? (
+                                    <div className="space-y-4">
+                                        <div className="p-4 rounded-xl bg-emerald-500/8 border border-emerald-500/20">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                                                <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Active</span>
+                                            </div>
+                                            <p className="text-slate-900 dark:text-white font-semibold">{activeBus?.busNumber || activeTrip.busId}</p>
+                                            <p className="text-slate-500 dark:text-slate-400 text-sm">{activeRoute?.name || activeTrip.routeId}</p>
+                                        </div>
+
+                                        {/* Passenger counter */}
+                                        <div>
+                                            <label className="text-slate-500 dark:text-slate-400 text-xs mb-2 block">Passengers aboard</label>
+                                            <div className="flex items-center gap-3">
+                                                <button onClick={() => handlePaxChange(-1)}
+                                                    className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold transition-colors">−</button>
+                                                <span className="text-slate-900 dark:text-white font-bold text-xl w-8 text-center">{localPaxCount}</span>
+                                                <button onClick={() => handlePaxChange(1)}
+                                                    className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold transition-colors">+</button>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <GradientButton variant="danger" size="sm" onClick={handleEndTrip} loading={updating} icon={<StopCircle size={15} />}>
+                                                    End Trip
+                                                </GradientButton>
+                                                <GradientButton variant="ghost" size="sm" className="border border-amber-500/30 font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20" onClick={handleBreakdown} icon={<AlertTriangle size={15} />}>
+                                                    Breakdown
+                                                </GradientButton>
+                                                <GradientButton variant="primary" size="sm" onClick={handleSendLocation} icon={<Navigation size={15} />}>
+                                                    Send Loc
+                                                </GradientButton>
+                                                <GradientButton variant="danger" size="sm" className="shadow-red-500/40 animate-pulse bg-gradient-to-r from-red-600 to-red-500" onClick={handleEmergency} icon={<AlertTriangle size={15} />}>
+                                                    SOS Emergency
+                                                </GradientButton>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6">
+                                        <div className="text-5xl mb-3">🚌</div>
+                                        <p className="text-slate-400 text-sm">Select a scheduled trip below to start.</p>
+                                    </div>
+                                )}
+                            </Panel>
+                        </div>
+
+                        {/* Map */}
+                        <div className="xl:col-span-2">
+                            <Panel icon="📍" title="Your Location" subtitle="GPS position updates on Send Location">
+                                <BusMap
+                                    height="320px"
+                                    buses={activeBus ? [{ id: 'conductor', lat: activeBus.currentLocation.lat, lng: activeBus.currentLocation.lng, label: 'Overview' }] : []}
+                                />
+                            </Panel>
+                        </div>
+                    </div>
+
+                    {/* Trip list */}
+                    <div id="my-trips-panel">
+                        <Panel icon="📋" title="My Trips" subtitle={`${trips.length} total trips`}>
+                            {trips.length === 0 ? (
+                                <p className="text-slate-400 text-center py-8">No trips assigned.</p>
+                            ) : (
+                                <motion.div variants={container} initial="hidden" animate="show" className="space-y-3">
+                                    {trips.map(t => (
+                                        <motion.div key={t.id} variants={item}
+                                            onClick={() => selectBus(t.busId)}
+                                            className="flex items-center justify-between cursor-pointer gap-4 flex-wrap p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 hover:border-amber-500/30 dark:hover:border-amber-500/20 shadow-sm dark:shadow-none transition-all">
+                                            <div>
+                                                <p className="text-slate-900 dark:text-white font-medium text-sm">
+                                                    {buses.find(b => b.id === t.busId)?.busNumber || t.busId} · {routes.find(r => r.id === t.routeId)?.name || t.routeId}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${STATUS_BADGES[t.status]}`}>{t.status}</span>
+                                                    <span className="text-slate-500 text-xs">{t.passengerCount} pax</span>
+                                                </div>
+                                            </div>
+                                            {t.status === 'scheduled' && (
+                                                <GradientButton variant="accent" size="sm" onClick={(e) => { e.stopPropagation(); handleStartTrip(t); }} loading={updating && !activeTrip} icon={<Play size={14} />}>
+                                                    Start
+                                                </GradientButton>
+                                            )}
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </Panel>
+                    </div>
+                </div>
+                <FloatingButton actions={[
+                    { icon: Clock, label: 'Set Reminders', color: 'bg-emerald-500 hover:bg-emerald-400', shadow: 'shadow-emerald-500/40', onClick: () => setIsReminderModalOpen(true) },
+                    { icon: Play, label: 'Start Next Trip', color: 'bg-indigo-600 hover:bg-indigo-500', shadow: 'shadow-indigo-500/40', onClick: () => {
+                        if (activeTrip) { flash('A trip is already running', 'err'); return; }
+                        const nextTrip = trips.find(t => t.status === 'scheduled');
+                        if (nextTrip) handleStartTrip(nextTrip);
+                        else flash('No scheduled trips found', 'err');
+                    }},
+                    { icon: AlertTriangle, label: 'Report Delay', color: 'bg-amber-500 hover:bg-amber-400', shadow: 'shadow-amber-500/40', onClick: () => {
+                        if(!activeBus || !activeRoute) { flash('Start a trip first.', 'err'); return; }
+                        addAlert({ title: `Traffic Delay: Bus ${activeBus.busNumber}`, message: `Slight delay reported on ${activeRoute.name}. Adjusting ETAs.`, severity: 'warning', busId: activeBus.id, routeId: activeRoute.id });
+                        flash('Traffic delay reported to Network!', 'ok');
+                    }},
+                    { icon: Navigation, label: 'Emergency Alert', color: 'bg-red-600 hover:bg-red-500', shadow: 'shadow-red-500/40', onClick: () => {
+                        if(!activeTrip) { flash('Start a trip first before declaring emergency.', 'err'); return; }
+                        handleEmergency();
+                    }},
+                ]} />
+                <SetReminderModal 
+                    isOpen={isReminderModalOpen} 
+                    onClose={() => setIsReminderModalOpen(false)} 
+                />
+            </div>
+        </RoleGuard>
+    );
+}

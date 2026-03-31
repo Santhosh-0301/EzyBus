@@ -1,0 +1,9 @@
+{
+    "name": "@ezybus/shared",
+    "version": "1.0.0",
+    "description": "Shared types, constants, and utilities for EzyBus",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"No tests for shared package\""
+    }
+}
