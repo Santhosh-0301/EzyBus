@@ -1,6 +1,11 @@
 # 🚌 EzyBus
 
-A full-stack bus management and commuter tracking platform supporting three user roles: **Commuter**, **Conductor**, and **Admin**.
+🚀 Smart Urban Transit Intelligence Platform  
+🌍 Built for FOSS Hack using OpenStreetMap
+
+EzyBus is a real-time public transportation system designed to improve urban mobility using open-source technologies.
+
+It connects commuters, conductors, and administrators into a unified platform for live tracking, route intelligence, and fleet management.
 
 ## Tech Stack
 
@@ -10,6 +15,7 @@ A full-stack bus management and commuter tracking platform supporting three user
 | Backend    | Node.js, Express.js, JWT Auth          |
 | Database   | Firebase Firestore                     |
 | Auth       | JWT + Firebase Admin SDK               |
+| Maps       | OpenStreetMap + Leaflet.js             |
 
 ## Project Structure
 
@@ -91,7 +97,6 @@ Base URL: `http://localhost:5000/api/v1`
 | PUT    | /trips/:id/status     | Conductor    | Update trip status   |
 | GET    | /users                | Admin        | List all users       |
 | PUT    | /users/:id/role       | Admin        | Change user role     |
-=======
 
 Smart Urban Bus Tracking & Transit Intelligence Platform
 
@@ -102,6 +107,19 @@ efficiency.
 It connects commuters, bus conductors, and transport administrators
 through a single intelligent platform that enables live bus tracking,
 route planning, and fleet management.
+
+------------------------------------------------------------------------
+
+## 🌍 Open Source Focus
+
+EzyBus is built with a strong commitment to open-source principles:
+
+- 🗺 Uses OpenStreetMap (OSM) instead of proprietary map services
+- 💸 Eliminates dependency on paid APIs like Google Maps
+- 🔓 Fully open-source and reusable
+- 🌱 Ideal for deployment in developing cities
+
+This makes EzyBus a scalable and cost-effective smart transit solution.
 
 ------------------------------------------------------------------------
 
@@ -123,6 +141,8 @@ These issues reduce public trust in transportation systems.
 EzyBus introduces a smart digital ecosystem for public bus transport.
 
 The platform enables:
+
+🌍 Open-Source Mapping Integration (OSM)
 
 🚍 Live Bus Tracking Passengers can see bus locations in real time on an
 interactive map.
@@ -160,6 +180,10 @@ A built-in bus simulator allows real-time testing without GPS hardware.
 🧑‍💻 Role-Based System
 
 Separate dashboards for: - Commuters - Conductors - Administrators
+
+🌍 Open-Source Mapping Integration (OSM)
+
+Uses OpenStreetMap (OSM) instead of proprietary map services
 
 ------------------------------------------------------------------------
 
@@ -282,6 +306,13 @@ Admin Dashboard - Fleet monitoring - System alerts - Route analytics
 EzyBus can help cities: - Reduce commuter waiting time - Improve transit
 reliability - Increase public transport adoption - Enable data-driven
 transport planning
+
+------------------------------------------------------------------------
+
+## 🎥 Demo
+
+🔗 Live Demo: https://your-vercel-link.vercel.app  
+🎬 Demo Video:(https://drive.google.com/file/d/1LQA-AsDlJ88I_8NaRi8xbFzauqnfXNLz/view)
 
 ------------------------------------------------------------------------
 
