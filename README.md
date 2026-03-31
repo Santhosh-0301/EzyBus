@@ -311,7 +311,7 @@ API integration is designed and ready, and can be connected seamlessly for real-
 ## 📜 License
 
 This project is licensed under the MIT License  
-© 2026 Team 404 BNF
+© 2026 Team - 404 BNF
 
 ------------------------------------------------------------------------
 
