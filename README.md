@@ -272,11 +272,12 @@ This enables testing and visualization during development and demos.
 
 ## 🎨 UI / UX Design
 
-The platform is built with production-level UI design principles.
-
-Features include: - Dark / Light mode - Animated dashboards -
-Glassmorphism UI cards - Custom cursor interactions - Responsive
-layouts - Interactive map visualization
+- Dark-themed professional dashboard
+- Glassmorphism-based UI components
+- Smooth animations using Framer Motion
+- Custom cursor interactions
+- Responsive layouts across devices
+- Interactive OpenStreetMap visualization
 
 ------------------------------------------------------------------------
 
@@ -288,6 +289,22 @@ Conductor Dashboard - Trip management - Passenger tracking - Location
 updates
 
 Admin Dashboard - Fleet monitoring - System alerts - Route analytics
+
+------------------------------------------------------------------------
+
+## 📡 API Integration
+
+The backend is fully structured with RESTful endpoints.
+
+API integration is designed and ready, and can be connected seamlessly for real-time deployment.
+
+------------------------------------------------------------------------
+
+## 🔐 Security
+
+- JWT-based authentication
+- Role-based access control
+- Protected routes for each dashboard
 
 ------------------------------------------------------------------------
 
