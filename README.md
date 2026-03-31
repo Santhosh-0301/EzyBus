@@ -333,6 +333,16 @@ transport planning
 
 ------------------------------------------------------------------------
 
+## 🔑 Demo Access
+
+| Role      | Email              | Password |
+|----------|-------------------|----------|
+| Commuter | commuter@ezybus.com     | commuter  |
+| Admin    | admin@ezybus.com  | admin123 |
+| Conductor| conductor@ezybus.com | conductor |
+
+------------------------------------------------------------------------
+
 ## 🎥 Demo
 
 🔗 Live Demo: (https://ezybus-frontend.vercel.app/)
