@@ -1,5 +1,7 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+const Map = dynamic(() => import('../Map'), { ssr: false });
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -129,13 +131,14 @@ export default function AdminDashboard() {
                         id={`admin-tab-${tab}`}
                         onClick={() => setActiveTab(tab)}
                         className={`px-5 py-2.5 text-sm font-medium capitalize transition-colors border-b-2 -mb-px ${activeTab === tab
-                                ? 'border-indigo-500 text-indigo-400'
-                                : 'border-transparent text-slate-400 hover:text-slate-200'
+                            ? 'border-indigo-500 text-indigo-400'
+                            : 'border-transparent text-slate-400 hover:text-slate-200'
                             }`}
                     >
                         {tab}
                     </button>
                 ))}
+                <Map />
             </div>
 
             {/* Tab Content */}

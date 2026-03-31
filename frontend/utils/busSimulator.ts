@@ -25,28 +25,45 @@ const HISTORY_MAX = 20;
 
 // ── Per-bus simulator state ──────────────────────────────────────────────────
 interface SimState {
-    heading: number;
-    turnRate: number;
-    turnTimer: number;
+    targetStopIndex: number;
+    direction: number; // 1 for forward, -1 for backward
     lastStopIndex: number;   // stop index last visited (to detect arrivals)
 }
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 const simStates = new Map<string, SimState>();
 
-const initSimState = (): SimState => ({
-    heading: Math.random() * 360,
-    turnRate: (Math.random() - 0.5) * 30,
-    turnTimer: Math.floor(Math.random() * 5) + 3,
-    lastStopIndex: -1,
-});
+const initSimState = (busLocation?: GeoLocation, waypoints?: GeoLocation[]): SimState => {
+    if (!busLocation || !waypoints || waypoints.length < 2) {
+        return { targetStopIndex: 1, direction: 1, lastStopIndex: -1 };
+    }
+    // Find the closest waypoint to the bus's current location
+    let closestIdx = 0;
+    let minDist = Infinity;
+    for (let i = 0; i < waypoints.length; i++) {
+        const d = Math.pow(waypoints[i].lat - busLocation.lat, 2) + Math.pow(waypoints[i].lng - busLocation.lng, 2);
+        if (d < minDist) { minDist = d; closestIdx = i; }
+    }
+    let targetStopIndex = closestIdx + 1;
+    let direction = 1;
+    if (targetStopIndex >= waypoints.length) {
+        targetStopIndex = waypoints.length - 2;
+        direction = -1;
+    }
+    return { targetStopIndex, direction, lastStopIndex: closestIdx };
+};
 
-const drift = (loc: GeoLocation, heading: number): GeoLocation => {
-    const r = (heading * Math.PI) / 180;
-    const noise = (Math.random() - 0.5) * SPEED_DEG * 0.3;
+const moveTowards = (loc: GeoLocation, target: GeoLocation, speedDeg: number): { newLoc: GeoLocation, reached: boolean } => {
+    const dLat = target.lat - loc.lat;
+    const dLng = target.lng - loc.lng;
+    const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+    if (dist <= speedDeg) {
+        return { newLoc: target, reached: true };
+    }
+    const ratio = speedDeg / dist;
     return {
-        lat: Math.min(13.15, Math.max(13.00, loc.lat + Math.cos(r) * SPEED_DEG + noise)),
-        lng: Math.min(80.35, Math.max(80.18, loc.lng + Math.sin(r) * SPEED_DEG + noise)),
+        newLoc: { lat: loc.lat + dLat * ratio, lng: loc.lng + dLng * ratio },
+        reached: false
     };
 };
 
@@ -70,18 +87,68 @@ function tick() {
         const bus = updatedBuses[i];
         if (bus.status !== 'active') continue;
 
-        if (!simStates.has(bus.id)) simStates.set(bus.id, initSimState());
+        const route = bus.routeId ? routeMap.get(bus.routeId) : undefined;
+        const waypoints: GeoLocation[] = route
+            ? (route.path && route.path.length > 0 ? route.path : route.stops.map(s => s.location))
+            : [];
+
+        // Initialise sim state the first time we see this bus, snapping to its nearest waypoint
+        if (!simStates.has(bus.id)) {
+            simStates.set(bus.id, initSimState(bus.currentLocation, waypoints));
+        }
         const state = simStates.get(bus.id)!;
 
-        // ── 1. Move bus ──────────────────────────────────────────────────────────
-        state.turnTimer -= 1;
-        if (state.turnTimer <= 0) {
-            state.heading += (Math.random() - 0.5) * 90 + state.turnRate;
-            state.heading = ((state.heading % 360) + 360) % 360;
-            state.turnRate = (Math.random() - 0.5) * 30;
-            state.turnTimer = Math.floor(Math.random() * 8) + 4;
+        // ── 1. Move bus along route ──────────────────────────────────────────────
+        let newLocation = bus.currentLocation;
+        let arrivedNow = false;
+        let arrivedStopName = '';
+        let arrivedStopIndex = -1;
+
+        if (route) {
+            // waypoints already resolved above; use them to drive the bus
+            
+            if (waypoints.length > 1) {
+                // Determine next target waypoint
+                if (state.targetStopIndex >= waypoints.length) {
+                    state.targetStopIndex = waypoints.length - 2;
+                    if (state.targetStopIndex < 0) state.targetStopIndex = 0;
+                    state.direction = -1;
+                }
+                let targetLoc = waypoints[state.targetStopIndex];
+                
+                const moveResult = moveTowards(bus.currentLocation, targetLoc, SPEED_DEG * 1.5);
+                newLocation = moveResult.newLoc;
+                
+                if (moveResult.reached) {
+                    // Reached the current waypoint
+                    state.lastStopIndex = state.targetStopIndex;
+                    
+                    // Check if this waypoint corresponds to a real stop to emit arrival
+                    const isActualStop = route.stops.find(s => 
+                        Math.abs(s.location.lat - targetLoc.lat) < 0.0001 && Math.abs(s.location.lng - targetLoc.lng) < 0.0001
+                    );
+                    if (isActualStop) {
+                        arrivedNow = true;
+                        arrivedStopName = isActualStop.name;
+                        arrivedStopIndex = route.stops.indexOf(isActualStop);
+                    }
+                    
+                    // Point to the next waypoint
+                    state.targetStopIndex += state.direction;
+                    
+                    // Reverse if hit ends
+                    if (state.targetStopIndex >= waypoints.length) {
+                        state.targetStopIndex = waypoints.length - 2;
+                        if (state.targetStopIndex < 0) state.targetStopIndex = 0;
+                        state.direction = -1;
+                    } else if (state.targetStopIndex < 0) {
+                        state.targetStopIndex = 1;
+                        if (state.targetStopIndex >= waypoints.length) state.targetStopIndex = 0;
+                        state.direction = 1;
+                    }
+                }
+            }
         }
-        const newLocation = drift(bus.currentLocation, state.heading);
 
         // ── 2. Update location in store ──────────────────────────────────────────
         updateBusLocation(bus.id, newLocation);
@@ -96,20 +163,13 @@ function tick() {
         });
 
         // ── 4. Check stop arrival ────────────────────────────────────────────────
-        if (bus.routeId) {
-            const route = routeMap.get(bus.routeId);
-            if (route) {
-                const nearest = nearestStop(newLocation, route);
-                if (nearest.distanceKm <= ARRIVAL_RADIUS_KM && nearest.index !== state.lastStopIndex) {
-                    state.lastStopIndex = nearest.index;
-                    eventBus.emit('bus:arrived', {
-                        busId: bus.id,
-                        routeId: bus.routeId,
-                        stopName: nearest.stop.name,
-                        stopIndex: nearest.index,
-                    });
-                }
-            }
+        if (arrivedNow && bus.routeId) {
+            eventBus.emit('bus:arrived', {
+                busId: bus.id,
+                routeId: bus.routeId,
+                stopName: arrivedStopName,
+                stopIndex: arrivedStopIndex,
+            });
         }
 
         // ── 5. Fluctuate passenger count ─────────────────────────────────────────
@@ -147,8 +207,15 @@ export function startBusSimulator(): () => void {
     if (intervalId !== null) return () => stopBusSimulator();
 
     // Init sim state for all active buses
-    const { buses } = useBusStore.getState();
-    buses.filter(b => b.status === 'active').forEach(b => simStates.set(b.id, initSimState()));
+    const { buses, routes } = useBusStore.getState();
+    const routeMap = new Map(routes.map(r => [r.id, r]));
+    buses.filter(b => b.status === 'active').forEach(b => {
+        const route = b.routeId ? routeMap.get(b.routeId) : undefined;
+        const waypoints: GeoLocation[] = route
+            ? (route.path && route.path.length > 0 ? route.path : route.stops.map(s => s.location))
+            : [];
+        simStates.set(b.id, initSimState(b.currentLocation, waypoints));
+    });
 
     useBusStore.getState().setSimulatorActive(true);
     intervalId = setInterval(tick, TICK_MS);

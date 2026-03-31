@@ -30,6 +30,12 @@ interface BusState {
     markAlertRead: (id: string) => void;
     /** Mark all alerts as read */
     markAllAlertsRead: () => void;
+    /** Add a new alert to the system */
+    addAlert: (alert: Omit<Alert, 'id' | 'createdAt' | 'read'>) => void;
+    /** Update a bus status */
+    updateBusStatus: (id: string, status: Bus['status']) => void;
+    /** Assign a bus to a route and location (for dispatching rescue) */
+    assignRoute: (id: string, routeId: string, location: GeoLocation) => void;
     /** Set simulator active flag */
     setSimulatorActive: (active: boolean) => void;
 }
@@ -71,6 +77,33 @@ export const useBusStore = create<BusState>()(
         markAllAlertsRead: () =>
             set(state => ({
                 alerts: state.alerts.map(a => ({ ...a, read: true })),
+            })),
+
+        addAlert: (alertInput) =>
+            set(state => {
+                const newAlert: Alert = {
+                    ...alertInput,
+                    id: `alert-${Date.now()}`,
+                    createdAt: new Date().toISOString(),
+                    read: false,
+                };
+                return { alerts: [newAlert, ...state.alerts] };
+            }),
+
+        updateBusStatus: (id, status) =>
+            set(state => ({
+                buses: state.buses.map(b => b.id === id ? { ...b, status } : b),
+            })),
+
+        assignRoute: (id, routeId, location) =>
+            set(state => ({
+                buses: state.buses.map(b => b.id === id ? { 
+                    ...b, 
+                    status: 'active', 
+                    routeId, 
+                    currentLocation: location,
+                    locationHistory: [location] 
+                } : b),
             })),
 
         setSimulatorActive: (active) => set({ simulatorActive: active }),

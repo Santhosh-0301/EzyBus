@@ -1,9 +1,10 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+const Map = dynamic(() => import('../Map'), { ssr: false });
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import MapView from '@/components/MapView';
 import api from '@/lib/api';
 
 interface Route {
@@ -88,13 +89,7 @@ export default function CommuterDashboard() {
             {/* Map */}
             <div className="mb-8">
                 <h2 className="text-lg font-semibold text-white mb-3">Live Bus Map</h2>
-                <MapView
-                    height="320px"
-                    markers={[
-                        { lat: 20.59, lng: 78.97, label: 'Bus 101' },
-                        { lat: 20.61, lng: 78.94, label: 'Bus 202' },
-                    ]}
-                />
+                <Map />
             </div>
 
             {/* Route Search */}

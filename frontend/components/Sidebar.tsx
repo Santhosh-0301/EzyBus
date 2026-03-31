@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,25 +21,63 @@ interface SidebarProps {
     role?: 'commuter' | 'conductor' | 'admin';
 }
 
+export interface SidebarHandle {
+    open: () => void;
+}
+
 const roleBase: Record<string, string> = {
     commuter: '/dashboard/commuter',
     conductor: '/dashboard/conductor',
     admin: '/dashboard/admin',
 };
 
-const roleItems = (role: string) => [
-    { icon: LayoutDashboard, label: 'Overview', href: roleBase[role] || '/dashboard/commuter' },
-    { icon: Bus, label: 'Live Buses', href: roleBase[role] },
-    { icon: Map, label: 'Routes', href: roleBase[role] },
-    { icon: Bell, label: 'Alerts', href: roleBase[role] },
-    { icon: Settings, label: 'Settings', href: roleBase[role] },
-];
+const roleItems = (role: string) => {
+    const base = roleBase[role] || '/dashboard/commuter';
+    if (role === 'admin') {
+        return [
+            { icon: LayoutDashboard, label: 'Overview',   href: base, targetId: null },
+            { icon: Bus,             label: 'Live Fleet', href: base, targetId: 'fleet-map' },
+            { icon: Bell,            label: 'Alerts',     href: base, targetId: 'admin-tabs-section' },
+            { icon: Settings,        label: 'Settings',   href: '/dashboard/settings', targetId: null },
+        ];
+    }
+    if (role === 'conductor') {
+        return [
+            { icon: LayoutDashboard, label: 'Overview',      href: base, targetId: null },
+            { icon: Bus,             label: 'Current Trip',  href: base, targetId: 'active-trip-panel' },
+            { icon: Map,             label: 'My Trips',      href: base, targetId: 'my-trips-panel' },
+            { icon: Settings,        label: 'Settings',      href: '/dashboard/settings', targetId: null },
+        ];
+    }
+    // commuter default
+    return [
+        { icon: LayoutDashboard, label: 'Overview',    href: base, targetId: null },
+        { icon: Bus,             label: 'Live Buses',  href: base, targetId: 'live-bus-tracking' },
+        { icon: Map,             label: 'Routes',      href: base, targetId: 'available-routes' },
+        { icon: Bell,            label: 'Alerts',      href: base, targetId: 'live-alerts' },
+        { icon: Settings,        label: 'Settings',    href: '/dashboard/settings', targetId: null },
+    ];
+};
 
-export default function Sidebar({ role = 'commuter' }: SidebarProps) {
+const Sidebar = forwardRef<SidebarHandle, SidebarProps>(function Sidebar({ role = 'commuter' }, ref) {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const nav = roleItems(role);
+
+    // Expose open() to parent via ref
+    useImperativeHandle(ref, () => ({ open: () => setMobileOpen(true) }), []);
+
+    // Initialize active label based on current exact pathname, fallback to Overview
+    const [activeLabel, setActiveLabel] = useState(() => {
+        const match = nav.find(n => n.href === pathname);
+        return match ? match.label : 'Overview';
+    });
+
+    useEffect(() => {
+        const match = nav.find(n => n.href === pathname);
+        if (match) setActiveLabel(match.label);
+    }, [pathname, nav]);
 
     const sidebarContent = (
         <div className="flex flex-col h-full">
@@ -75,10 +113,23 @@ export default function Sidebar({ role = 'commuter' }: SidebarProps) {
 
             {/* Nav items */}
             <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-                {nav.map(({ icon: Icon, label, href }) => {
-                    const active = pathname === href;
+                {nav.map(({ icon: Icon, label, href, targetId }) => {
+                    const active = activeLabel === label;
+
+                    const handleClick = (e: React.MouseEvent) => {
+                        setActiveLabel(label);
+                        setMobileOpen(false);
+                        if (targetId && pathname === href) {
+                            e.preventDefault();
+                            document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else if (pathname === href && !targetId) {
+                            e.preventDefault();
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                    };
+
                     return (
-                        <Link key={label} href={href} onClick={() => setMobileOpen(false)}>
+                        <Link key={label} href={href} onClick={handleClick}>
                             <motion.div
                                 whileHover={{ x: collapsed ? 0 : 4 }}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${active
@@ -169,4 +220,6 @@ export default function Sidebar({ role = 'commuter' }: SidebarProps) {
             </motion.aside>
         </>
     );
-}
+});
+
+export default Sidebar;

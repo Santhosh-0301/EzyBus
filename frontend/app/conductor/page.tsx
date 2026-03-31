@@ -1,5 +1,7 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+const Map = dynamic(() => import('../Map'), { ssr: false });
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -121,6 +123,7 @@ export default function ConductorDashboard() {
             <div className="mb-8">
                 <h2 className="text-lg font-semibold text-white mb-3">Your Location</h2>
                 <MapView height="260px" markers={activeTrip ? [{ lat: 20.59, lng: 78.97, label: `Bus ${activeTrip.busId}` }] : []} />
+                <Map />
             </div>
 
             {/* All Trips */}

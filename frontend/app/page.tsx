@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Map from "./Map";
 
 const features = [
   {
@@ -106,7 +107,13 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-
+      {/* Map Section */}
+      <section className="max-w-7xl mx-auto px-4 py-10">
+        <h2 className="text-2xl font-bold mb-4 text-center">
+          Live Bus Map
+        </h2>
+        <Map />
+      </section>
       {/* Features Grid */}
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         <div className="text-center mb-14">

@@ -51,6 +51,7 @@ export interface Route {
     origin: string;
     destination: string;
     stops: RouteStop[];
+    path?: GeoLocation[];
     estimatedDuration: number;  // minutes
     distance: number;           // km
     active: boolean;

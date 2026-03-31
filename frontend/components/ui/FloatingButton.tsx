@@ -4,13 +4,21 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, Play, AlertTriangle, Navigation } from 'lucide-react';
 
-const actions = [
+export interface FloatingAction {
+    icon: React.ElementType;
+    label: string;
+    color: string;
+    shadow: string;
+    onClick?: () => void;
+}
+
+const defaultActions: FloatingAction[] = [
     { icon: Play, label: 'Start Trip', color: 'bg-indigo-600 hover:bg-indigo-500', shadow: 'shadow-indigo-500/40' },
     { icon: AlertTriangle, label: 'Report Delay', color: 'bg-amber-500 hover:bg-amber-400', shadow: 'shadow-amber-500/40' },
     { icon: Navigation, label: 'Emergency Alert', color: 'bg-red-600 hover:bg-red-500', shadow: 'shadow-red-500/40' },
 ];
 
-export default function FloatingButton() {
+export default function FloatingButton({ actions = defaultActions }: { actions?: FloatingAction[] }) {
     const [open, setOpen] = useState(false);
 
     return (
@@ -44,7 +52,10 @@ export default function FloatingButton() {
                                 whileHover={{ scale: 1.12 }}
                                 whileTap={{ scale: 0.92 }}
                                 className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl ${a.shadow} ${a.color} transition-colors`}
-                                onClick={() => { setOpen(false); }}
+                                onClick={() => {
+                                    setOpen(false);
+                                    if (a.onClick) a.onClick();
+                                }}
                             >
                                 <Icon size={18} />
                             </motion.button>

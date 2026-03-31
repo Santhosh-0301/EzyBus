@@ -10,6 +10,7 @@ interface StatCardProps {
     trend?: { direction: 'up' | 'down' | 'neutral'; value: string };
     color?: 'indigo' | 'cyan' | 'amber' | 'emerald' | 'purple' | 'red';
     className?: string;
+    onClick?: () => void;
 }
 
 const colorMap: Record<string, { text: string; bg: string; border: string; glow: string }> = {
@@ -24,17 +25,18 @@ const colorMap: Record<string, { text: string; bg: string; border: string; glow:
 const trendColors = { up: 'text-emerald-600 dark:text-emerald-400', down: 'text-red-600 dark:text-red-400', neutral: 'text-slate-500 dark:text-slate-400' };
 const trendIcons = { up: '↑', down: '↓', neutral: '→' };
 
-export default function StatCard({ label, value, icon, trend, color = 'indigo', className = '' }: StatCardProps) {
+export default function StatCard({ label, value, icon, trend, color = 'indigo', className = '', onClick }: StatCardProps) {
     const c = colorMap[color];
     return (
         <motion.div
             whileHover={{ y: -4, scale: 1.02 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={onClick}
             className={`
         relative rounded-2xl p-5 border border-slate-200 dark:border-transparent backdrop-blur-xl
         bg-white/95 dark:bg-slate-900/60 shadow-xl shadow-black/5 dark:shadow-black/20
         transition-shadow duration-300
-        ${c.border} ${c.glow}
+        ${c.border} ${c.glow} ${onClick ? 'cursor-pointer hover:shadow-lg' : ''}
         ${className}
       `}
         >

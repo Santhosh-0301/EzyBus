@@ -10,8 +10,9 @@ import FloatingButton from '@/components/ui/FloatingButton';
 import StatCard from '@/components/ui/StatCard';
 import Panel from '@/components/ui/Panel';
 import GradientButton from '@/components/ui/GradientButton';
+import SetReminderModal from '@/components/ui/SetReminderModal';
 import { startTrip, endTrip, updateLocation } from '@/lib/apiService';
-import { Navigation, Play, StopCircle, Users, MapPin, Clock } from 'lucide-react';
+import { Navigation, Play, StopCircle, Users, MapPin, Clock, AlertTriangle } from 'lucide-react';
 import RoleGuard from '@/components/RoleGuard';
 import { useTripStore } from '@/store/tripStore';
 import { useBusStore } from '@/store/busStore';
@@ -39,12 +40,18 @@ export default function ConductorDashboardPage() {
     const updatePaxCount = useTripStore(s => s.updatePassengerCount);
 
     const buses = useBusStore(s => s.buses);
+    const routes = useBusStore(s => s.routes);
+    const selectBus = useBusStore(s => s.selectBus);
     const activeBus = activeTrip ? buses.find(b => b.id === activeTrip.busId) : null;
+    const activeRoute = activeTrip ? routes.find(r => r.id === activeTrip.routeId) : null;
     const updateBusLoc = useBusStore(s => s.updateBusLocation);
+    const updateBusStatus = useBusStore(s => s.updateBusStatus);
+    const addAlert = useBusStore(s => s.addAlert);
 
     const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null);
     const [updating, setUpdating] = useState(false);
     const [localPaxCount, setLocalPaxCount] = useState(0);
+    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
 
     const remainingStops = activeTrip ? 5 : 0;
     const tripTime = activeTrip ? "45 mins" : "0 mins";
@@ -114,6 +121,45 @@ export default function ConductorDashboardPage() {
         updatePaxCount(activeTrip.id, newCount);
     };
 
+    const handleBreakdown = () => {
+        if (!activeTrip || !activeBus || !activeRoute) return;
+        
+        // Mark as maintenance
+        updateBusStatus(activeBus.id, 'maintenance');
+        
+        // Send alert
+        addAlert({
+            title: `🚨 Breakdown: Bus ${activeBus.busNumber}`,
+            message: `Dear passengers, Bus ${activeBus.busNumber} is currently experiencing a minor technical delay. Please don't worry—a replacement bus has already been dispatched and will arrive shortly to ensure you reach your destination safely on ${activeRoute.name}. Thank you for your patience!`,
+            severity: 'critical',
+            busId: activeBus.id,
+            routeId: activeRoute.id
+        });
+
+        // End trip contextually so it stops routing
+        handleEndTrip();
+        flash('Emergency notified to Admin and Commuters!', 'err');
+    };
+
+    const handleEmergency = () => {
+        if (!activeTrip || !activeBus || !activeRoute) return;
+        
+        // Mark as inactive (stopped)
+        updateBusStatus(activeBus.id, 'inactive');
+        
+        // Send critical alert
+        addAlert({
+            title: `🚨 EMERGENCY SOS: Bus ${activeBus.busNumber}`,
+            message: `Attention passengers: There is an emergency on Bus ${activeBus.busNumber}. Please remain calm and stay seated. Emergency services and authorities have been immediately notified of our exact location and are en route. Your safety is our absolute priority.`,
+            severity: 'critical',
+            busId: activeBus.id,
+            routeId: activeRoute.id
+        });
+
+        // Flash
+        flash('SOS Emergency Alert Sent!', 'err');
+    };
+
     if (loading || !user) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" /></div>;
 
     return (
@@ -139,10 +185,10 @@ export default function ConductorDashboardPage() {
                     {/* Stats */}
                     <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                         {[
-                            { label: "Current Trip", value: activeTrip ? "Running" : "Idle", icon: <Navigation size={18} />, color: 'emerald' as const },
-                            { label: "Passengers Onboard", value: localPaxCount, icon: <Users size={18} />, color: 'indigo' as const },
-                            { label: "Stops Remaining", value: remainingStops, icon: <MapPin size={18} />, color: 'cyan' as const },
-                            { label: "Trip Duration", value: tripTime, icon: <Clock size={18} />, color: 'amber' as const }
+                            { label: "Current Trip", value: activeTrip ? "Running" : "Idle", icon: <Navigation size={18} />, color: 'emerald' as const, onClick: () => document.getElementById('active-trip-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+                            { label: "Passengers Onboard", value: localPaxCount, icon: <Users size={18} />, color: 'indigo' as const, onClick: () => document.getElementById('active-trip-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+                            { label: "Stops Remaining", value: remainingStops, icon: <MapPin size={18} />, color: 'cyan' as const, onClick: () => document.getElementById('active-trip-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+                            { label: "Trip Duration", value: tripTime, icon: <Clock size={18} />, color: 'amber' as const, onClick: () => document.getElementById('my-trips-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
                         ].map((s: any) => (
                             <motion.div key={s.label} variants={item}><StatCard {...s} /></motion.div>
                         ))}
@@ -150,7 +196,7 @@ export default function ConductorDashboardPage() {
 
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
                         {/* Active Trip Panel */}
-                        <div className="xl:col-span-1">
+                        <div className="xl:col-span-1" id="active-trip-panel">
                             <Panel icon="🚌" title="Bus Status" subtitle={activeTrip ? 'Trip in progress' : 'No active trip'}>
                                 {activeTrip ? (
                                     <div className="space-y-4">
@@ -159,8 +205,8 @@ export default function ConductorDashboardPage() {
                                                 <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
                                                 <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Active</span>
                                             </div>
-                                            <p className="text-slate-900 dark:text-white font-semibold">{activeTrip.busId}</p>
-                                            <p className="text-slate-500 dark:text-slate-400 text-sm">{activeTrip.routeId}</p>
+                                            <p className="text-slate-900 dark:text-white font-semibold">{activeBus?.busNumber || activeTrip.busId}</p>
+                                            <p className="text-slate-500 dark:text-slate-400 text-sm">{activeRoute?.name || activeTrip.routeId}</p>
                                         </div>
 
                                         {/* Passenger counter */}
@@ -176,12 +222,20 @@ export default function ConductorDashboardPage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <GradientButton variant="danger" size="sm" className="w-full" onClick={handleEndTrip} loading={updating} icon={<StopCircle size={15} />}>
-                                                End Trip
-                                            </GradientButton>
-                                            <GradientButton variant="primary" size="sm" className="w-full" onClick={handleSendLocation} icon={<Navigation size={15} />}>
-                                                Send Location
-                                            </GradientButton>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <GradientButton variant="danger" size="sm" onClick={handleEndTrip} loading={updating} icon={<StopCircle size={15} />}>
+                                                    End Trip
+                                                </GradientButton>
+                                                <GradientButton variant="ghost" size="sm" className="border border-amber-500/30 font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20" onClick={handleBreakdown} icon={<AlertTriangle size={15} />}>
+                                                    Breakdown
+                                                </GradientButton>
+                                                <GradientButton variant="primary" size="sm" onClick={handleSendLocation} icon={<Navigation size={15} />}>
+                                                    Send Loc
+                                                </GradientButton>
+                                                <GradientButton variant="danger" size="sm" className="shadow-red-500/40 animate-pulse bg-gradient-to-r from-red-600 to-red-500" onClick={handleEmergency} icon={<AlertTriangle size={15} />}>
+                                                    SOS Emergency
+                                                </GradientButton>
+                                            </div>
                                         </div>
                                     </div>
                                 ) : (
@@ -205,33 +259,59 @@ export default function ConductorDashboardPage() {
                     </div>
 
                     {/* Trip list */}
-                    <Panel icon="📋" title="My Trips" subtitle={`${trips.length} total trips`}>
-                        {trips.length === 0 ? (
-                            <p className="text-slate-400 text-center py-8">No trips assigned.</p>
-                        ) : (
-                            <motion.div variants={container} initial="hidden" animate="show" className="space-y-3">
-                                {trips.map(t => (
-                                    <motion.div key={t.id} variants={item}
-                                        className="flex items-center justify-between gap-4 flex-wrap p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 hover:border-amber-500/30 dark:hover:border-amber-500/20 shadow-sm dark:shadow-none transition-all">
-                                        <div>
-                                            <p className="text-slate-900 dark:text-white font-medium text-sm">{t.busId} · {t.routeId}</p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${STATUS_BADGES[t.status]}`}>{t.status}</span>
-                                                <span className="text-slate-500 text-xs">{t.passengerCount} pax</span>
+                    <div id="my-trips-panel">
+                        <Panel icon="📋" title="My Trips" subtitle={`${trips.length} total trips`}>
+                            {trips.length === 0 ? (
+                                <p className="text-slate-400 text-center py-8">No trips assigned.</p>
+                            ) : (
+                                <motion.div variants={container} initial="hidden" animate="show" className="space-y-3">
+                                    {trips.map(t => (
+                                        <motion.div key={t.id} variants={item}
+                                            onClick={() => selectBus(t.busId)}
+                                            className="flex items-center justify-between cursor-pointer gap-4 flex-wrap p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 hover:border-amber-500/30 dark:hover:border-amber-500/20 shadow-sm dark:shadow-none transition-all">
+                                            <div>
+                                                <p className="text-slate-900 dark:text-white font-medium text-sm">
+                                                    {buses.find(b => b.id === t.busId)?.busNumber || t.busId} · {routes.find(r => r.id === t.routeId)?.name || t.routeId}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${STATUS_BADGES[t.status]}`}>{t.status}</span>
+                                                    <span className="text-slate-500 text-xs">{t.passengerCount} pax</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                        {t.status === 'scheduled' && (
-                                            <GradientButton variant="accent" size="sm" onClick={() => handleStartTrip(t)} loading={updating && !activeTrip} icon={<Play size={14} />}>
-                                                Start
-                                            </GradientButton>
-                                        )}
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        )}
-                    </Panel>
+                                            {t.status === 'scheduled' && (
+                                                <GradientButton variant="accent" size="sm" onClick={(e) => { e.stopPropagation(); handleStartTrip(t); }} loading={updating && !activeTrip} icon={<Play size={14} />}>
+                                                    Start
+                                                </GradientButton>
+                                            )}
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </Panel>
+                    </div>
                 </div>
-                <FloatingButton />
+                <FloatingButton actions={[
+                    { icon: Clock, label: 'Set Reminders', color: 'bg-emerald-500 hover:bg-emerald-400', shadow: 'shadow-emerald-500/40', onClick: () => setIsReminderModalOpen(true) },
+                    { icon: Play, label: 'Start Next Trip', color: 'bg-indigo-600 hover:bg-indigo-500', shadow: 'shadow-indigo-500/40', onClick: () => {
+                        if (activeTrip) { flash('A trip is already running', 'err'); return; }
+                        const nextTrip = trips.find(t => t.status === 'scheduled');
+                        if (nextTrip) handleStartTrip(nextTrip);
+                        else flash('No scheduled trips found', 'err');
+                    }},
+                    { icon: AlertTriangle, label: 'Report Delay', color: 'bg-amber-500 hover:bg-amber-400', shadow: 'shadow-amber-500/40', onClick: () => {
+                        if(!activeBus || !activeRoute) { flash('Start a trip first.', 'err'); return; }
+                        addAlert({ title: `Traffic Delay: Bus ${activeBus.busNumber}`, message: `Slight delay reported on ${activeRoute.name}. Adjusting ETAs.`, severity: 'warning', busId: activeBus.id, routeId: activeRoute.id });
+                        flash('Traffic delay reported to Network!', 'ok');
+                    }},
+                    { icon: Navigation, label: 'Emergency Alert', color: 'bg-red-600 hover:bg-red-500', shadow: 'shadow-red-500/40', onClick: () => {
+                        if(!activeTrip) { flash('Start a trip first before declaring emergency.', 'err'); return; }
+                        handleEmergency();
+                    }},
+                ]} />
+                <SetReminderModal 
+                    isOpen={isReminderModalOpen} 
+                    onClose={() => setIsReminderModalOpen(false)} 
+                />
             </div>
         </RoleGuard>
     );

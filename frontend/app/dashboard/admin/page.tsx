@@ -10,8 +10,12 @@ import FloatingButton from '@/components/ui/FloatingButton';
 import StatCard from '@/components/ui/StatCard';
 import Panel from '@/components/ui/Panel';
 import GradientButton from '@/components/ui/GradientButton';
+import SetReminderModal from '@/components/ui/SetReminderModal';
+import DispatchRescueModal from '@/components/ui/DispatchRescueModal';
+import BroadcastModal from '@/components/ui/BroadcastModal';
 import { useBusStore } from '@/store/busStore';
 import { useTripStore } from '@/store/tripStore';
+import type { Alert } from '@/lib/types';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useETAs } from '@/hooks/useETAs';
 import { passengerSeverity } from '@/lib/analyticsEngine';
@@ -44,6 +48,7 @@ export default function AdminDashboardPage() {
 
     // ── Store data ─────────────────────────────────────────────────────────────
     const buses = useBusStore(s => s.buses);
+    const selectBus = useBusStore(s => s.selectBus);
     const alerts = useBusStore(s => s.alerts);
     const markAllAlertsRead = useBusStore(s => s.markAllAlertsRead);
     const markAlertRead = useBusStore(s => s.markAlertRead);
@@ -58,6 +63,9 @@ export default function AdminDashboardPage() {
     const maintenanceBuses = buses.filter(b => b.status === 'maintenance').length;
 
     const [activeTab, setActiveTab] = React.useState<AlertTab>('fleet');
+    const [isReminderModalOpen, setIsReminderModalOpen] = React.useState(false);
+    const [isBroadcastModalOpen, setIsBroadcastModalOpen] = React.useState(false);
+    const [dispatchAlert, setDispatchAlert] = React.useState<Alert | null>(null);
 
     useEffect(() => {
         if (!loading && !user) router.push('/login/admin');
@@ -109,10 +117,10 @@ export default function AdminDashboardPage() {
                     <motion.div variants={container} initial="hidden" animate="show"
                         className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                         {[
-                            { label: "Active Fleet", value: activeBuses, icon: <Bus size={18} />, color: 'indigo' as const },
-                            { label: "Trips Today", value: tripsToday, icon: <Activity size={18} />, color: 'cyan' as const },
-                            { label: "Maintenance", value: maintenanceBuses, icon: <Wrench size={18} />, color: 'amber' as const },
-                            { label: "System Alerts", value: alerts.length, icon: <Bell size={18} />, color: alerts.length > 2 ? 'red' as const : 'emerald' as const }
+                            { label: "Active Fleet", value: activeBuses, icon: <Bus size={18} />, color: 'indigo' as const, onClick: () => { setActiveTab('fleet'); document.getElementById('admin-tabs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } },
+                            { label: "Trips Today", value: tripsToday, icon: <Activity size={18} />, color: 'cyan' as const, onClick: () => { setActiveTab('fleet'); document.getElementById('admin-tabs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } },
+                            { label: "Maintenance", value: maintenanceBuses, icon: <Wrench size={18} />, color: 'amber' as const, onClick: () => { setActiveTab('fleet'); document.getElementById('admin-tabs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } },
+                            { label: "System Alerts", value: alerts.length, icon: <Bell size={18} />, color: alerts.length > 2 ? 'red' as const : 'emerald' as const, onClick: () => { setActiveTab('alerts'); document.getElementById('admin-tabs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
                         ].map((s: any) => (
                             <motion.div key={s.label} variants={itemV}><StatCard {...s} /></motion.div>
                         ))}
@@ -126,7 +134,7 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex gap-1 mb-5 border-b border-slate-700/50">
+                    <div id="admin-tabs-section" className="flex gap-1 mb-5 border-b border-slate-700/50">
                         {(['fleet', 'alerts', 'eta'] as AlertTab[]).map(tab => (
                             <button key={tab} id={`admin-dash-tab-${tab}`} onClick={() => setActiveTab(tab)}
                                 className={`relative px-5 py-2.5 text-sm font-medium capitalize transition-colors ${activeTab === tab ? 'text-indigo-600 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>
@@ -145,7 +153,8 @@ export default function AdminDashboardPage() {
                             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {buses.map(b => (
                                 <motion.div key={b.id} variants={itemV}
-                                    className="p-5 rounded-2xl bg-white/95 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 hover:border-indigo-500/30 dark:hover:border-slate-600/60 transition-all hover:-translate-y-1 shadow-xl shadow-black/5 dark:shadow-black/20">
+                                    onClick={() => selectBus(b.id)}
+                                    className="p-5 cursor-pointer rounded-2xl bg-white/95 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 hover:border-indigo-500/30 dark:hover:border-slate-600/60 transition-all hover:-translate-y-1 shadow-xl shadow-black/5 dark:shadow-black/20">
                                     <div className="flex items-start justify-between mb-3">
                                         <div>
                                             <p className="text-slate-900 dark:text-white font-semibold text-sm">{b.busNumber}</p>
@@ -196,12 +205,21 @@ export default function AdminDashboardPage() {
                                         <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{a.message}</p>
                                         <p className="text-slate-500 dark:text-slate-600 text-[10px] mt-1">{new Date(a.createdAt).toLocaleTimeString()}</p>
                                     </div>
-                                    {!a.read && (
-                                        <button onClick={() => markAlertRead(a.id)}
-                                            className="text-xs text-slate-500 hover:text-slate-300 shrink-0 transition-colors">
-                                            Dismiss
-                                        </button>
-                                    )}
+                                    <div className="flex flex-col items-end gap-2">
+                                        {!a.read && (
+                                            <button onClick={() => markAlertRead(a.id)}
+                                                className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-300 shrink-0 transition-colors">
+                                                Dismiss
+                                            </button>
+                                        )}
+                                        {a.severity === 'critical' && a.busId && (
+                                            <button 
+                                                onClick={() => setDispatchAlert(a)}
+                                                className="text-xs font-bold px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg shadow-sm shadow-red-500/20 transition-all shrink-0">
+                                                Dispatch Rescue
+                                            </button>
+                                        )}
+                                    </div>
                                 </motion.div>
                             ))}
                         </motion.div>
@@ -235,7 +253,24 @@ export default function AdminDashboardPage() {
                         </motion.div>
                     )}
                 </div>
-                <FloatingButton />
+                <FloatingButton actions={[
+                    { icon: Clock, label: 'Set Reminders', color: 'bg-emerald-500 hover:bg-emerald-400', shadow: 'shadow-emerald-500/40', onClick: () => setIsReminderModalOpen(true) },
+                    { icon: RefreshCw, label: 'Restart Systems', color: 'bg-indigo-600 hover:bg-indigo-500', shadow: 'shadow-indigo-500/40', onClick: () => window.location.reload() },
+                    { icon: Bell, label: 'Broadcast Alert', color: 'bg-amber-500 hover:bg-amber-400', shadow: 'shadow-amber-500/40', onClick: () => setIsBroadcastModalOpen(true) },
+                ]} />
+                <SetReminderModal 
+                    isOpen={isReminderModalOpen} 
+                    onClose={() => setIsReminderModalOpen(false)} 
+                />
+                <BroadcastModal 
+                    isOpen={isBroadcastModalOpen}
+                    onClose={() => setIsBroadcastModalOpen(false)}
+                />
+                <DispatchRescueModal 
+                    isOpen={!!dispatchAlert} 
+                    onClose={() => setDispatchAlert(null)} 
+                    alertSource={dispatchAlert} 
+                />
             </div>
         </RoleGuard>
     );
