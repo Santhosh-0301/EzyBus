@@ -1,0 +1,64 @@
+﻿node : file:///C:/Users
+/rnand/Desktop/EzyBus-m
+ain/EzyBus-main/backend
+/src/config/env.js:3
+At line:1 char:1
++ node src/index.js 
+2>&1 | Out-File 
+err.txt -Encoding utf8
++ 
+~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (file:///C:/Us   
+ er...config/env.js    
+:3:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+require('dotenv').confi
+g();
+^
+
+ReferenceError: 
+require is not defined 
+in ES module scope, 
+you can use import 
+instead
+    at file:///C:/Users
+/rnand/Desktop/EzyBus-m
+ain/EzyBus-main/backend
+/src/config/env.js:3:1
+    at 
+ModuleJobSync.runSync (
+node:internal/modules/e
+sm/module_job:534:37)
+    at ModuleLoader.imp
+ortSyncForRequire (node
+:internal/modules/esm/l
+oader:388:47)
+    at loadESMFromCJS (
+node:internal/modules/c
+js/loader:1629:24)
+    at Module._compile 
+(node:internal/modules/
+cjs/loader:1794:5)
+    at Object..js (node
+:internal/modules/cjs/l
+oader:1943:10)
+    at Module.load (nod
+e:internal/modules/cjs/
+loader:1533:32)
+    at Module._load (no
+de:internal/modules/cjs
+/loader:1335:12)
+    at wrapModuleLoad (
+node:internal/modules/c
+js/loader:255:19)
+    at Module.require (
+node:internal/modules/c
+js/loader:1556:12)
+
+Node.js v24.14.0
